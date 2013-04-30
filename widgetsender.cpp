@@ -6,14 +6,15 @@
 
 widgetSender::widgetSender(QWidget *parent) :
     Page(parent),
-    ui(new Ui::widgetSender)
+    ui(new Ui::widgetSender),
+    fn(*new QFile("List.ini",this))
 {
     ui->setupUi(this);
 
     packet = new rsPacket;
     reloadPacket();
-    fn = new QFile("Packet_List.ini");
     ReloadFile();
+
 }
 
 widgetSender::~widgetSender()
@@ -53,11 +54,16 @@ void widgetSender::reloadPacket()
     }
 
     ui->lineEdit->setText(packet->getFormated());
+    plonk = true;
 }
 
 void widgetSender::on_butSend_clicked()
 {
-    packet->Send();
+    if (plonk)
+        packet->Send();
+    else
+        list->Send();
+
 }
 
 void widgetSender::on_butSave_clicked()
@@ -76,18 +82,52 @@ void widgetSender::on_butSave_clicked()
     item->setData(Qt::UserRole, QVariant::fromValue(packet));
 
     SaveToFile(packet);
+
+    packet = new rsPacket(*packet);
+    reloadPacket();
 }
 
 void widgetSender::SaveToFile(rsPacket * pack)
 {
-    if(!fn->open(QFile::WriteOnly,QFile::Append))
-        return;
-    fn->write(pack->Serialize());
+    fn.close();
+    if(!fn.open(QFile::WriteOnly |QFile::Append))
+    {
+        fn.close();
+        if(!fn.open(QFile::WriteOnly))
+        {
+            fn.close();
+            return;
+        }
+    }
+    fn.write(pack->Serialize());
+    fn.write("\n");
+    fn.close();
 }
 
 void widgetSender::ReloadFile()
 {
+    if(!fn.open(QFile::ReadOnly))
+    {
+        fn.close();
+        return;
+    }
 
+    ui->listPackets->clear();
+    QByteArray temp;
+    temp = fn.readLine();
+    while(temp.length())
+    {
+        rsPacket * pack = new rsPacket;
+        pack->Unserialize(temp);
+
+        QListWidgetItem * item = new QListWidgetItem(pack->name);
+        ui->listPackets->addItem(item);
+        item->setData(Qt::UserRole, QVariant::fromValue(pack));
+
+        temp = fn.readLine();
+    }
+
+    fn.close();
 }
 
 void widgetSender::on_spinType_valueChanged(int )
@@ -98,4 +138,13 @@ void widgetSender::on_spinType_valueChanged(int )
 void widgetSender::on_spinAddress_valueChanged(int )
 {
     reloadPacket();
+}
+
+void widgetSender::on_listPackets_itemClicked(QListWidgetItem *item)
+{
+    rsPacket * pack = item->data(Qt::UserRole).value<rsPacket*>();
+    ui->lineEdit->setText(pack->getFormated());
+
+    list = pack;
+    plonk = false;
 }

@@ -5,6 +5,7 @@
 #include "qextserialport.h"
 #include <QStringList>
 #include "qextserialenumerator.h"
+#include <QDebug>
 
 QIODevice * rsPacket::dev = NULL;
 
@@ -46,12 +47,16 @@ uint8_t rsPacket::calculateChecksum() const
 
 void rsPacket::Send(QIODevice *device) const
 {
+    QByteArray arr = getRaw();
+    qDebug() << arr.toHex();
     if (device == NULL)
         return;
 
-    QByteArray arr = getRaw();
     if (device->isWritable())
+    {
         device->write(arr);
+
+    }
 }
 
 void rsPacket::setData(uint8_t idx, uint8_t data)
@@ -115,7 +120,8 @@ void rsPacket::fromRaw(QByteArray &data)
     data.remove(0,1);
     p.command = static_cast<cmd_t>(data.at(0));
     data.remove(0,1);
-    p.data = (uint8_t *)malloc(p.dataSize);
+    if (p.dataSize)
+        p.data = (uint8_t *)malloc(p.dataSize);
     for (int i = 0; i < p.dataSize; i++)
     {
         p.data[i] = data.at(i);
@@ -125,16 +131,20 @@ void rsPacket::fromRaw(QByteArray &data)
 QByteArray rsPacket::Serialize()
 {
     QByteArray temp = name.toAscii();
-    temp += "\n";
+    temp += " ";
     temp += getRaw().toHex();
     return temp;
 }
 
 void rsPacket::Unserialize(const QByteArray  &str)
 {
-    QByteArray arr = QByteArray::fromHex(str.trimmed());
-    fromRaw(arr);
+    int i = str.indexOf(" ");
+    QByteArray name = str.left(i);
+    QByteArray temp = str.right(str.length() - i);
+    QByteArray arr = QByteArray::fromHex(temp.trimmed());
 
+    this->name = QString::fromAscii(name);
+    fromRaw(arr);
 }
 
 /******************************************************
