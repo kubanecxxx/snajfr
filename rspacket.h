@@ -5,6 +5,7 @@
 #include "rs485.h"
 #include <QByteArray>
 #include <QObject>
+#include <QVariant>
 
 class comportClass;
 class QIODevice;
@@ -26,6 +27,11 @@ public:
     void setDataSize(uint8_t size);
     void setData(uint8_t idx, uint8_t data);
     void setCommand(uint8_t comm) {p.command = static_cast<cmd_t>(comm);}
+    QByteArray Serialize();
+    void Unserialize(const QByteArray & str);
+    void fromRaw(QByteArray & data);
+
+    QString name;
 
 private:
     packet_t p;
@@ -62,5 +68,7 @@ signals:
     void NewPacket(rsPacket packet);
     void connectionStatus(bool);
 };
+
+Q_DECLARE_METATYPE(rsPacket *)
 
 #endif // RSPACKET_H

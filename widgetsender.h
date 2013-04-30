@@ -7,6 +7,7 @@ namespace Ui {
 class widgetSender;
 }
 
+class QFile;
 class rsPacket;
 class widgetSender : public Page
 {
@@ -26,6 +27,10 @@ private slots:
 private:
     Ui::widgetSender *ui;
     void reloadPacket();
+
+    void SaveToFile(rsPacket * pack);
+    void ReloadFile();
+    QFile * fn;
 
     rsPacket * packet;
 };

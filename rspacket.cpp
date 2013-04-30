@@ -104,6 +104,39 @@ QByteArray rsPacket::getRaw() const
     return temp;
 }
 
+void rsPacket::fromRaw(QByteArray &data)
+{
+    uint8_t pre = data.at(0);
+    data.remove(0,1);
+
+    p.address = data.at(0);
+    data.remove(0,1);
+    p.dataSize = data.at(0);
+    data.remove(0,1);
+    p.command = static_cast<cmd_t>(data.at(0));
+    data.remove(0,1);
+    p.data = (uint8_t *)malloc(p.dataSize);
+    for (int i = 0; i < p.dataSize; i++)
+    {
+        p.data[i] = data.at(i);
+    }
+}
+
+QByteArray rsPacket::Serialize()
+{
+    QByteArray temp = name.toAscii();
+    temp += "\n";
+    temp += getRaw().toHex();
+    return temp;
+}
+
+void rsPacket::Unserialize(const QByteArray  &str)
+{
+    QByteArray arr = QByteArray::fromHex(str.trimmed());
+    fromRaw(arr);
+
+}
+
 /******************************************************
  */
 

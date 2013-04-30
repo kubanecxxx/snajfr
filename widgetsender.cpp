@@ -1,6 +1,8 @@
 #include "widgetsender.h"
 #include "ui_widgetsender.h"
 #include "rspacket.h"
+#include <QInputDialog>
+#include <QFile>
 
 widgetSender::widgetSender(QWidget *parent) :
     Page(parent),
@@ -10,6 +12,8 @@ widgetSender::widgetSender(QWidget *parent) :
 
     packet = new rsPacket;
     reloadPacket();
+    fn = new QFile("Packet_List.ini");
+    ReloadFile();
 }
 
 widgetSender::~widgetSender()
@@ -57,6 +61,31 @@ void widgetSender::on_butSend_clicked()
 }
 
 void widgetSender::on_butSave_clicked()
+{
+    bool ok;
+    QString nejm = QInputDialog::getText(this,trUtf8("New packet"),tr("Name"),
+                                         QLineEdit::Normal,tr("packet"),&ok);
+
+    if (nejm.isEmpty())
+        return;
+
+    QListWidgetItem * item = new QListWidgetItem(nejm);
+    packet->name = nejm;
+    ui->listPackets->addItem(item);
+
+    item->setData(Qt::UserRole, QVariant::fromValue(packet));
+
+    SaveToFile(packet);
+}
+
+void widgetSender::SaveToFile(rsPacket * pack)
+{
+    if(!fn->open(QFile::WriteOnly,QFile::Append))
+        return;
+    fn->write(pack->Serialize());
+}
+
+void widgetSender::ReloadFile()
 {
 
 }
