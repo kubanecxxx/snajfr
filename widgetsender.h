@@ -8,6 +8,7 @@ namespace Ui {
 class widgetSender;
 }
 
+class comportClass;
 class QListWidgetItem;
 class QFile;
 class rsPacket;
@@ -16,8 +17,9 @@ class widgetSender : public Page
     Q_OBJECT
     
 public:
-    explicit widgetSender(QWidget *parent = 0);
+    explicit widgetSender(QObject * comic,QWidget *parent = 0);
     ~widgetSender();
+    void ReloadLine();
     
 private slots:
     void on_spinSize_valueChanged(int arg1);
@@ -26,6 +28,7 @@ private slots:
     void on_spinType_valueChanged(int arg1);
     void on_spinAddress_valueChanged(int arg1);
     void on_listPackets_itemClicked(QListWidgetItem *item);
+    void timeout();
 
 private:
     Ui::widgetSender *ui;
@@ -33,11 +36,10 @@ private:
 
     void SaveToFile(rsPacket * pack);
     void ReloadFile();
+    void FillSpinList(int count);
     QFile & fn;
 
     rsPacket * packet;
-    rsPacket * list;
-    bool plonk;
 };
 
 #endif // WIDGETSENDER_H

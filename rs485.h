@@ -1,1 +1,1 @@
-/home/kubanec/workspace/AVR_Makefile/serial/rs485.h
+/home/kubanec/humr/trunk/FW_Lanik/laserTag/common/serial/rs485.h

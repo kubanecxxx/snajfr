@@ -3,18 +3,35 @@
 #include "rspacket.h"
 #include <QInputDialog>
 #include <QFile>
+#include "widgetreceiver.h"
+#include <QTimer>
 
-widgetSender::widgetSender(QWidget *parent) :
+widgetSender::widgetSender(QObject * comic,QWidget *parent) :
     Page(parent),
     ui(new Ui::widgetSender),
     fn(*new QFile("List.ini",this))
 {
     ui->setupUi(this);
+    ui->verticalLayout->addWidget(new widgetReceiver(comic,this));
 
+
+
+    QTimer::singleShot(50,this,SLOT(timeout()));
+}
+
+void widgetSender::ReloadLine()
+{
+        ui->lineEdit->setText(packet->getFormated());
+}
+
+void widgetSender::timeout()
+{
     packet = new rsPacket;
+    if (property("neco").isValid())
+        packet->SetPar(property("neco").value<wifiPacket_t*>());
+
     reloadPacket();
     ReloadFile();
-
 }
 
 widgetSender::~widgetSender()
@@ -22,10 +39,9 @@ widgetSender::~widgetSender()
     delete ui;
 }
 
-void widgetSender::on_spinSize_valueChanged(int arg1)
+void widgetSender::FillSpinList(int arg1)
 {
     ui->listBytes->clear();
-
     for (int i = 0 ; i < arg1 ; i++)
     {
         QSpinBox * box = new QSpinBox(this);
@@ -37,6 +53,11 @@ void widgetSender::on_spinSize_valueChanged(int arg1)
         ui->listBytes->setItemWidget(ui->listBytes->item(i),box);
 
     }
+}
+
+void widgetSender::on_spinSize_valueChanged(int arg1)
+{
+    FillSpinList(arg1);
     reloadPacket();
 }
 
@@ -53,16 +74,12 @@ void widgetSender::reloadPacket()
         packet->setData(i,box->value());
     }
 
-    ui->lineEdit->setText(packet->getFormated());
-    plonk = true;
+    ReloadLine();
 }
 
 void widgetSender::on_butSend_clicked()
 {
-    if (plonk)
-        packet->Send();
-    else
-        list->Send();
+    packet->Send();
 
 }
 
@@ -120,6 +137,9 @@ void widgetSender::ReloadFile()
         rsPacket * pack = new rsPacket;
         pack->Unserialize(temp);
 
+        if (property("neco").isValid())
+            pack->SetPar(property("neco").value<wifiPacket_t*>());
+
         QListWidgetItem * item = new QListWidgetItem(pack->name);
         ui->listPackets->addItem(item);
         item->setData(Qt::UserRole, QVariant::fromValue(pack));
@@ -143,8 +163,24 @@ void widgetSender::on_spinAddress_valueChanged(int )
 void widgetSender::on_listPackets_itemClicked(QListWidgetItem *item)
 {
     rsPacket * pack = item->data(Qt::UserRole).value<rsPacket*>();
-    ui->lineEdit->setText(pack->getFormated());
+    Q_ASSERT(pack);
 
-    list = pack;
-    plonk = false;
+    //load widget
+    ui->spinAddress->setValue(pack->getPacket()->address);
+    ui->spinType->setValue(pack->getPacket()->command);
+    ui->spinSize->setValue(pack->getPacket()->dataSize);
+
+    FillSpinList(ui->spinSize->value());
+
+    for (int i = 0 ; i < ui->spinSize->value(); i++)
+    {
+        QListWidgetItem * item = ui->listBytes->item(i);
+        QSpinBox * box = qobject_cast<QSpinBox*>(ui->listBytes->itemWidget(item));
+        box->setValue(pack->getPacket()->data[i]);
+    }
+
+    ReloadLine();
+
+    packet = new rsPacket(*pack);
+    Q_ASSERT(packet);
 }
