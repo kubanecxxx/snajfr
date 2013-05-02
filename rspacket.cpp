@@ -456,7 +456,7 @@ void wifiPacketUdp::newDataTimeout()
         temp.resize(receiver->pendingDatagramSize());
         receiver->readDatagram(temp.data(),temp.size(),&addr,&port);
         buffer += temp;
-        if (packet->TryFill(buffer))
+        while (packet->TryFill(buffer))
         {
             wifiPacket_t *pac = new wifiPacket_t(*packet);
             pac->Valid = true;

@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget *parent) :
     statusBar()->addPermanentWidget(led);
 
     QTreeWidgetItem * it;
-/*
+
     WidgetCom * Com = new WidgetCom(com,this);
 
     it = ui->centralWidget->AddPage(NULL);
@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->centralWidget->AddPage(Com,it);
     ui->centralWidget->AddPage(new widgetSender(com,this),it);
     //ui->centralWidget->AddPage(new widgetReceiver(com,this));
-*/
+
     it = ui->centralWidget->AddPage(NULL);
     it->setText(0,tr("UDP"));
 
