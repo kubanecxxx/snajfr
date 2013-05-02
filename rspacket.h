@@ -40,6 +40,7 @@ public:
     const packet_t * getPacket() {return &p;}
     uint8_t getRealChecksum() const {return internalChecksum;}
     void SetPar(wifiPacket_t * par){parent = par;}
+    wifiPacket_t * Parent() {return parent;}
 
 private:
     packet_t p;
@@ -98,18 +99,22 @@ class wifiPacket_t
 public:
     wifiPacket_t();
     wifiPacket_t(wifiPacket_t & cpy);
-    void Send();
+    void Send(const rsPacket * pac);
     uint8_t ID;
     uint8_t cmd;
     rsPacket * p;
     QByteArray getRaw();
     QString getFormated();
+    QHostAddress Ip() const {return ip;}
+    bool ipValid() {return Valid;}
 
 private:
     bool TryFill(QByteArray & data);
     friend class wifiPacketUdp;
     static QUdpSocket * dev;
     static int port;
+     QHostAddress ip;
+     bool Valid;
 };
 
 class wifiPacketUdp : public QObject
@@ -121,15 +126,19 @@ public:
     void Close();
     ~wifiPacketUdp() {wifiPacket_t::dev = NULL;}
 
+
 private:
     QUdpSocket * socket;
+    QUdpSocket * receiver;
     int port;
     QByteArray buffer;
     wifiPacket_t * packet;
 
+
 private slots:
     void newData();
     void newDataTimeout();
+    void err(QAbstractSocket::SocketError);
 
 signals:
     void NewPacket(rsPacket * packet);

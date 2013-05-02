@@ -59,7 +59,7 @@ void rsPacket::Send(QIODevice *device) const
 {
     if (parent)
     {
-        parent->Send();
+        parent->Send(this);
         return;
     }
 
@@ -106,6 +106,8 @@ QString rsPacket::getFormated() const
     str.insert(i -= 2, " ");
     str.insert(i -= 2, " ");
     str.insert(i -= 2, " ");
+
+
 
     return str;
 }
@@ -319,6 +321,7 @@ int wifiPacket_t::port;
 
 wifiPacket_t::wifiPacket_t()
 {
+    Valid = false;
     ID=0;
     cmd=0;
     p = new rsPacket;
@@ -333,7 +336,7 @@ wifiPacket_t::wifiPacket_t(wifiPacket_t & cpy)
     p->parent = this;
 }
 
-void wifiPacket_t::Send()
+void wifiPacket_t::Send(const rsPacket * pac)
 {
     QHostAddress addr;
     addr = QString("192.168.1.%1").arg((int)ID);
@@ -342,7 +345,7 @@ void wifiPacket_t::Send()
 
     if (dev && dev->isWritable())
     {
-        QByteArray temp = p->getRaw();
+        QByteArray temp = pac->getRaw();
         int j = dev->writeDatagram(temp,addr,port);
         asm("nop");
     }
@@ -403,18 +406,31 @@ bool wifiPacket_t::TryFill(QByteArray &data)
 wifiPacketUdp::wifiPacketUdp(QObject *par):
     QObject(par)
 {
+    setProperty("srot",1);
     socket = new QUdpSocket(this);
+    receiver = new QUdpSocket(this);
 
-    connect(socket,SIGNAL(readyRead()),this,SLOT(newData()));
+    connect(receiver,SIGNAL(readyRead()),this,SLOT(newData()));
+    connect(receiver,SIGNAL(error(QAbstractSocket::SocketError)), this,
+            SLOT(err(QAbstractSocket::SocketError)));
     wifiPacket_t::dev = socket;
     packet = new wifiPacket_t;
 }
 
+void wifiPacketUdp::err(QAbstractSocket::SocketError)
+{
+    asm("nop");
+    qDebug() << "error";
+}
+
 void wifiPacketUdp::Open(int port)
 {
+    port;
     wifiPacket_t::port = port;
     this->port = port;
-  //  socket->bind(QHostAddress::Any,port);
+    receiver->close();
+    receiver->bind(port ,QUdpSocket::ShareAddress) ;
+
     bool ok = socket->open(QIODevice::ReadWrite);
     emit connectionStatus(ok);
 }
@@ -432,11 +448,21 @@ void wifiPacketUdp::newData()
 
 void wifiPacketUdp::newDataTimeout()
 {
-    buffer += socket->readAll();
-    if (packet->TryFill(buffer))
+    QByteArray temp;
+    QHostAddress addr;
+    quint16 port;
+    while (receiver->hasPendingDatagrams())
     {
-        wifiPacket_t *pac = new wifiPacket_t(*packet);
-        emit NewPacket(pac->p);
+        temp.resize(receiver->pendingDatagramSize());
+        receiver->readDatagram(temp.data(),temp.size(),&addr,&port);
+        buffer += temp;
+        if (packet->TryFill(buffer))
+        {
+            wifiPacket_t *pac = new wifiPacket_t(*packet);
+            pac->Valid = true;
+            pac->ip = addr;
+            emit NewPacket(pac->p);
+        }
     }
 }
 

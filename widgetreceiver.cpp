@@ -10,6 +10,8 @@ widgetReceiver::widgetReceiver(QObject * comic,QWidget *parent) :
 {
     ui->setupUi(this);
     connect(comic,SIGNAL(NewPacket(rsPacket*)),this,SLOT(newPacket(rsPacket*)));
+    if (!comic->property("srot").isValid())
+        ui->treeAll->hideColumn(2);
 }
 
 widgetReceiver::~widgetReceiver()
@@ -79,4 +81,8 @@ void widgetReceiver::newPacket(rsPacket * packet)
     item->setText(1,packet->getFormated() + QString(" (%1)").
                   arg(packet->getRealChecksum(),0,16));
     item->setData(0,Qt::UserRole,QVariant::fromValue(packet));
+
+
+    if (packet->Parent() && packet->Parent()->ipValid())
+        item->setText(2,packet->Parent()->Ip().toString());
 }

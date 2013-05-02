@@ -30,6 +30,11 @@
         <string>Packet</string>
        </property>
       </column>
+      <column>
+       <property name="text">
+        <string>IP</string>
+       </property>
+      </column>
      </widget>
      <widget class="QTreeWidget" name="treeOne">
       <property name="columnCount">
